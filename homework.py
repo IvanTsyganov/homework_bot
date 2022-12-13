@@ -28,12 +28,12 @@ HOMEWORK_VERDICTS = {
 
 
 def check_tokens():
-    """Проверка валидности токенов"""
+    """Проверка валидности токенов."""
     return all([TELEGRAM_TOKEN, PRACTICUM_TOKEN, TELEGRAM_CHAT_ID])
 
 
 def send_message(bot, message):
-    """Отправка соощения в чат telegram"""
+    """Отправка соощения в чат telegram."""
     try:
         bot.send_message(
             chat_id=TELEGRAM_CHAT_ID,
@@ -47,7 +47,7 @@ def send_message(bot, message):
 
 
 def get_api_answer(timestamp):
-    """Делает запрос к API Практикум.Домашка"""
+    """Делает запрос к API Практикум Домашка."""
     if timestamp is None:
         timestamp = int(time.time())
     params = {'from_date': timestamp}
@@ -65,7 +65,7 @@ def get_api_answer(timestamp):
 
 
 def check_response(response):
-    """Проверка содержания запроса API"""
+    """Проверка содержания запроса API."""
     try:
         homeworks = response['homeworks']
     except KeyError as error:
@@ -107,7 +107,7 @@ def main():
                 send_message(bot, homework_status)
                 logging.info('Сообщение отправлено')
             else:
-                logging.info('Пока ничего нового')
+                logging.info('Пока ничего')
             time.sleep(RETRY_PERIOD)
         except Exception as error:
             logging.error(f'Сбой в работе программы: {error}')
