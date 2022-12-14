@@ -34,6 +34,7 @@ def check_tokens():
 
 class SendingMessageError(Exception):
     """Специальная ошибка отправки сообщения."""
+
     pass
 
 
