@@ -8,6 +8,7 @@ from http import HTTPStatus
 import telegram
 import requests
 from dotenv import load_dotenv
+from exceptions import SendingMessageError, ApiRequestError
 
 
 load_dotenv()
@@ -30,12 +31,6 @@ HOMEWORK_VERDICTS = {
 def check_tokens():
     """Проверка валидности токенов."""
     return all((TELEGRAM_TOKEN, PRACTICUM_TOKEN, TELEGRAM_CHAT_ID))
-
-
-class SendingMessageError(Exception):
-    """Специальная ошибка отправки сообщения."""
-
-    pass
 
 
 def send_message(bot, message):
@@ -69,7 +64,7 @@ def get_api_answer(timestamp):
     except requests.exceptions.RequestException as error:
         message = 'Ошибка при запросе к основному API'
         logging.error(message)
-        raise Exception(error)
+        raise ApiRequestError from error
 
 
 def check_response(response):
@@ -78,6 +73,7 @@ def check_response(response):
         homeworks = response['homeworks']
     except KeyError as error:
         logging.error(f'Ошибка доступа по ключу homeworks: {error}')
+        raise KeyError(f'Ошибка доступа по ключу homeworks: {error}')
     if not isinstance(homeworks, list):
         logging.error('Ответ в некорректном формате (homeworks не список)')
         raise TypeError('Ответ API в некорректном формате')
@@ -104,26 +100,24 @@ def main():
     if not check_tokens():
         logging.critical('Отсутствует обязательная переменная окружения.')
         sys.exit(1)
-    else:
-        logging.info('Старт')
-        bot = telegram.Bot(token=TELEGRAM_TOKEN)
-        timestamp = int(time.time())
-        while True:
-            try:
-                all_homeworks = get_api_answer(timestamp)
-                logging.info('Получен ответ от API')
-                homeworks = check_response(all_homeworks)
-                if len(homeworks) > 0:
-                    homework_status = parse_status(homeworks[0])
-                    send_message(bot, homework_status)
-                    logging.info('Сообщение отправлено')
-                else:
-                    logging.debug('Пока ничего')
-                time.sleep(RETRY_PERIOD)
-            except Exception as error:
-                logging.error(f'Сбой в работе программы: {error}')
-            finally:
-                time.sleep(RETRY_PERIOD)
+    logging.info('Старт')
+    bot = telegram.Bot(token=TELEGRAM_TOKEN)
+    timestamp = int(time.time())
+    while True:
+        try:
+            all_homeworks = get_api_answer(timestamp)
+            logging.info('Получен ответ от API')
+            homeworks = check_response(all_homeworks)
+            if len(homeworks) > 0:
+                homework_status = parse_status(homeworks[0])
+                send_message(bot, homework_status)
+                logging.info('Сообщение отправлено')
+            else:
+                logging.debug('Пока ничего')
+        except Exception as error:
+            logging.error(f'Сбой в работе программы: {error}')
+        finally:
+            time.sleep(RETRY_PERIOD)
 
 
 if __name__ == '__main__':
